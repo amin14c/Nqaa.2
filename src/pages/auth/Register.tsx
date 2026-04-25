@@ -73,8 +73,23 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col p-6 bg-[#F8F9FA] overflow-y-auto">
-      <h1 className="text-3xl font-bold text-[#0284c7] mt-8 mb-6 text-center">{t('app_name')}</h1>
+    <div className="min-h-screen flex flex-col p-6 bg-[#F8F9FA] overflow-y-auto relative">
+      <div className="absolute top-4 end-4 flex gap-2">
+        <button 
+          onClick={() => setLang('ar')}
+          className={`px-3 py-1 text-sm rounded-full transition-colors ${lang === 'ar' ? 'bg-[#0284c7] text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+        >
+          عربية
+        </button>
+        <button 
+          onClick={() => setLang('fr')}
+          className={`px-3 py-1 text-sm rounded-full transition-colors ${lang === 'fr' ? 'bg-[#0284c7] text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+        >
+          Français
+        </button>
+      </div>
+
+      <h1 className="text-3xl font-bold text-[#0284c7] mt-12 mb-6 text-center">{t('app_name')}</h1>
       
       <form onSubmit={handleRegister} className="flex-1 max-w-sm w-full mx-auto space-y-4 pb-8">
         <h2 className="text-2xl font-semibold mb-4">{t('register')}</h2>
