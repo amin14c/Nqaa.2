@@ -1,0 +1,113 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} { allow read, write: if false; }
+
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(uid) { return isSignedIn() && request.auth.uid == uid; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+
+    function isValidUser(data) {
+        return data.size() >= 5 && data.size() <= 15
+            && data.uid is string && data.uid.size() <= 128 && data.uid == request.auth.uid
+            && data.fullName is string && data.fullName.size() <= 100
+            && data.phone is string && data.phone.size() <= 20
+            && data.role in ['client', 'worker']
+            && data.createdAt is number;
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn(); // Other users need to read names
+      allow list: if isSignedIn() && existing().uid == request.auth.uid; // Only list own or strict
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidId(userId) && isValidUser(incoming()) && incoming().uid == existing().uid && incoming().role == existing().role;
+    }
+
+    function isValidWorkerProfile(data) {
+        return data.size() >= 1 && data.size() <= 15
+            && data.uid is string && data.uid == request.auth.uid
+            && data.get('bio', '') is string && data.get('bio', '').size() <= 1000
+            && data.get('bioFr', '') is string && data.get('bioFr', '').size() <= 1000
+            && data.get('services', []) is list && data.get('services', []).size() <= 20
+            && data.get('wilayasServed', []) is list && data.get('wilayasServed', []).size() <= 60
+            && data.get('pricePerHour', 0) is number
+            && data.get('pricePerSession', 0) is number
+            && data.get('rating', 0) is number
+            && data.get('totalReviews', 0) is number
+            && data.get('totalBookings', 0) is number
+            && data.get('isAvailable', true) is bool
+            && data.get('idCardVerified', false) is bool;
+    }
+
+    match /workers/{workerId} {
+        allow get: if isSignedIn();
+        allow list: if isSignedIn() && (existing().isAvailable == true || existing().uid == request.auth.uid);
+        allow create: if isOwner(workerId) && isValidId(workerId) && isValidWorkerProfile(incoming()) && incoming().idCardVerified == false && incoming().rating == 0 && incoming().totalReviews == 0 && incoming().totalBookings == 0;
+        allow update: if isOwner(workerId) && isValidId(workerId) && isValidWorkerProfile(incoming()) && incoming().uid == existing().uid && incoming().idCardVerified == existing().idCardVerified && incoming().rating == existing().rating && incoming().totalReviews == existing().totalReviews && incoming().totalBookings == existing().totalBookings;
+        // NOTE: In a real app, ratings/bookings are updated securely via functions. We restrict client updates.
+    }
+
+    function isValidBooking(data) {
+        return data.size() >= 4 && data.size() <= 20
+            && data.id is string && data.id.size() <= 128
+            && data.clientId is string && data.clientId == request.auth.uid // Enforced for create
+            && data.workerId is string && data.workerId.size() <= 128
+            && data.status in ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled']
+            && data.createdAt is number
+            && data.get('totalPrice', 0) is number;
+    }
+    
+    function isValidBookingUpdate(data) {
+        return data.size() >= 4 && data.size() <= 20
+            && data.id is string
+            && data.clientId is string
+            && data.workerId is string
+            && data.status in ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled']
+            && data.createdAt is number;
+    }
+
+    match /bookings/{bookingId} {
+        allow get: if isSignedIn() && isValidId(bookingId) && (existing().clientId == request.auth.uid || existing().workerId == request.auth.uid);
+        allow list: if isSignedIn() && (existing().clientId == request.auth.uid || existing().workerId == request.auth.uid);
+        allow create: if isSignedIn() 
+            && isValidId(bookingId) 
+            && isValidBooking(incoming()) 
+            && incoming().status == 'pending' 
+            // Ensure worker exists
+            && exists(/databases/$(database)/documents/workers/$(incoming().workerId));
+        
+        allow update: if isSignedIn() && isValidId(bookingId) && isValidBookingUpdate(incoming()) && (
+            // Client cancelling
+            (existing().clientId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']) && incoming().status == 'cancelled')
+            ||
+            // Worker changing status
+            (existing().workerId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']))
+        );
+    }
+    
+    function isValidReview(data) {
+      return data.size() >= 6 && data.size() <= 10
+        && data.id is string && data.id.size() <= 128
+        && data.bookingId is string && data.bookingId.size() <= 128
+        && data.reviewerId is string && data.reviewerId == request.auth.uid
+        && data.revieweeId is string && data.revieweeId.size() <= 128
+        && data.rating is number && data.rating >= 1 && data.rating <= 5
+        && data.comment is string && data.comment.size() <= 1000
+        && data.createdAt is number;
+    }
+
+    match /reviews/{reviewId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(reviewId) && isValidReview(incoming()) 
+          && get(/databases/$(database)/documents/bookings/$(incoming().bookingId)).data.clientId == request.auth.uid
+          && get(/databases/$(database)/documents/bookings/$(incoming().bookingId)).data.workerId == incoming().revieweeId
+          && get(/databases/$(database)/documents/bookings/$(incoming().bookingId)).data.status == 'completed';
+    }
+  }
+}

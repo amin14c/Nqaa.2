@@ -1,0 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Tajawal:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #0284c7;
+  --color-secondary: #f59e0b;
+}
+
+body {
+  background-color: #F8F9FA;
+  color: #1A1A2E;
+  margin: 0;
+  padding: 0;
+}
+
+[dir="rtl"] {
+  font-family: "Tajawal", sans-serif;
+}
+[dir="ltr"] {
+  font-family: "Inter", sans-serif;
+}

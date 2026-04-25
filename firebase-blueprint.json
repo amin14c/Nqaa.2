@@ -1,0 +1,105 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Base user profile representing both clients and workers",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "fullName": { "type": "string" },
+        "phone": { "type": "string" },
+        "wilaya": { "type": "string" },
+        "commune": { "type": "string" },
+        "role": { "type": "string", "enum": ["client", "worker"] },
+        "photoUrl": { "type": "string" },
+        "isVerified": { "type": "boolean" },
+        "preferredLang": { "type": "string", "enum": ["ar", "fr"] },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["uid", "fullName", "phone", "role", "createdAt"]
+    },
+    "WorkerProfile": {
+      "title": "WorkerProfile",
+      "description": "Additional profile details specifically for workers",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "bio": { "type": "string" },
+        "bioFr": { "type": "string" },
+        "services": {
+            "type": "array",
+            "items": { "type": "string" }
+        },
+        "wilayasServed": {
+            "type": "array",
+            "items": { "type": "string" }
+        },
+        "pricePerHour": { "type": "number" },
+        "pricePerSession": { "type": "number" },
+        "rating": { "type": "number" },
+        "totalReviews": { "type": "number" },
+        "totalBookings": { "type": "number" },
+        "isAvailable": { "type": "boolean" },
+        "idCardVerified": { "type": "boolean" }
+      },
+      "required": ["uid"]
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "A booking request from a client to a worker",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "clientId": { "type": "string" },
+        "workerId": { "type": "string" },
+        "clientName": { "type": "string" },
+        "workerName": { "type": "string" },
+        "serviceType": { "type": "string" },
+        "date": { "type": "string" },
+        "timeSlot": { "type": "string" },
+        "durationHours": { "type": "number" },
+        "address": { "type": "string" },
+        "wilaya": { "type": "string" },
+        "totalPrice": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "in_progress", "completed", "cancelled"] },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["id", "clientId", "workerId", "status", "createdAt"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Review from a client about a completed booking",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "bookingId": { "type": "string" },
+        "reviewerId": { "type": "string" },
+        "revieweeId": { "type": "string" },
+        "rating": { "type": "number" },
+        "comment": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "bookingId", "reviewerId", "revieweeId", "rating", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores user profiles."
+    },
+    "/workers/{workerId}": {
+      "schema": { "$ref": "#/entities/WorkerProfile" },
+      "description": "Stores additional data for workers. Document ID matches userId."
+    },
+    "/bookings/{bookingId}": {
+        "schema": { "$ref": "#/entities/Booking" },
+        "description": "Stores all bookings."
+    },
+    "/reviews/{reviewId}": {
+        "schema": { "$ref": "#/entities/Review" },
+        "description": "Stores all reviews."
+    }
+  }
+}
