@@ -74,9 +74,7 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex flex-col p-6 bg-[#F8F9FA] overflow-y-auto">
-      <div className="mt-8 mb-6 text-center">
-        <img src="/logo.png" alt={t('app_name')} className="h-24 mx-auto object-contain" />
-      </div>
+      <h1 className="text-3xl font-bold text-[#0284c7] mt-8 mb-6 text-center">{t('app_name')}</h1>
       
       <form onSubmit={handleRegister} className="flex-1 max-w-sm w-full mx-auto space-y-4 pb-8">
         <h2 className="text-2xl font-semibold mb-4">{t('register')}</h2>

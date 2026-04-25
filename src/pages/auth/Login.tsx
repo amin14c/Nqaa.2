@@ -27,9 +27,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex flex-col p-6 bg-[#F8F9FA]">
-      <div className="mt-12 mb-8 text-center">
-        <img src="/logo.png" alt={t('app_name')} className="h-32 mx-auto object-contain" />
-      </div>
+      <h1 className="text-3xl font-bold text-[#0284c7] mt-12 mb-8 text-center">{t('app_name')}</h1>
       
       <form onSubmit={handleLogin} className="flex-1 max-w-sm w-full mx-auto space-y-6">
         <h2 className="text-2xl font-semibold">{t('login')}</h2>
